@@ -2,7 +2,7 @@
 
 using namespace sensor_msgs;
 using namespace message_filters;
-
+static int obstacle_removal_dilation_size = 35; //variable used for dilating and eroding.. to be changed only if dimension of image changes.
 void callback(const ImageConstPtr& lane_image, const ImageConstPtr& lidar_image) {
     cv_bridge::CvImagePtr lane_map;
     cv_bridge::CvImagePtr lidar_map;
@@ -37,6 +37,10 @@ void singleCallback(const ImageConstPtr& image) {
         cv_image = cv_bridge::toCvCopy(image, image_encodings::MONO8);
         cv_bridge::CvImage message;
         message.encoding = image_encodings::MONO8;
+        cv::Mat element = cv::getStructuringElement(cv::MORPH_RECT,
+                                                cv::Size(2 * obstacle_removal_dilation_size + 1, 2 * obstacle_removal_dilation_size + 1),
+                                                cv::Point(obstacle_removal_dilation_size, obstacle_removal_dilation_size));
+        cv::dilate(cv_image->image, cv_image->image, element);
         message.image = cv_image->image;
         world_map_publisher.publish(message.toImageMsg());
     } catch (cv_bridge::Exception& e) {
